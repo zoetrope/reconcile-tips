@@ -1,0 +1,7 @@
+apiVersion: sample.zoetrope.github.io/v1
+kind: MyApp
+metadata:
+  name: myapp-sample
+spec:
+  # Add fields here
+  foo: bar
