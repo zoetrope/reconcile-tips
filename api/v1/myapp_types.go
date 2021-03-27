@@ -17,6 +17,7 @@ limitations under the License.
 package v1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -28,8 +29,8 @@ type MyAppSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of MyApp. Edit myapp_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	PodTemplate     corev1.PodTemplate `json:"podTemplate"`
+	ServiceTemplate corev1.Service     `json:"serviceTemplate"`
 }
 
 // MyAppStatus defines the observed state of MyApp

@@ -2,6 +2,20 @@ apiVersion: sample.zoetrope.github.io/v1
 kind: MyApp
 metadata:
   name: myapp-sample
+  labels:
+    foo: bar
 spec:
-  # Add fields here
-  foo: bar
+  podTemplate:
+    metadata:
+      labels:
+        "foo": "bar"
+    template:
+      metadata:
+        labels:
+          "foo": "bar"
+      spec:
+        containers:
+          - name: nginx
+            image: nginx:latest
+            imagePullPolicy: IfNotPresent
+  serviceTemplate: {}
