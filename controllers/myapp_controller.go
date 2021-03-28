@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/google/go-cmp/cmp"
@@ -79,22 +80,23 @@ func (r *MyAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return ctrl.Result{}, nil
 	}
 
-	//err = r.reconcileDeployment1(ctx, &myapp)
-	//err = r.reconcileDeployment2(ctx, &myapp)
-	//err = r.reconcileDeployment3(ctx, &myapp)
-	//err = r.reconcileDeployment4(ctx, &myapp)
-	//err = r.reconcileDeployment5(ctx, &myapp)
-	//err = r.reconcileDeployment6(ctx, &myapp)
-	err = r.reconcileDeployment7(ctx, &myapp)
-	//err = r.reconcileService1(ctx, &myapp)
+	//err = r.reconcileDeploymentByOverwriting(ctx, &myapp)
+	//err = r.reconcileDeploymentByManualMerge(ctx, &myapp)
+	//err = r.reconcileDeploymentByManualMerge2(ctx, &myapp)
+	//err = r.reconcileDeploymentByDeepDerivative(ctx, &myapp)
+	//err = r.reconcileDeploymentByStrategicMergePatch(ctx, &myapp)
+	//err = r.reconcileDeploymentBySSA1(ctx, &myapp)
+	//err = r.reconcileDeploymentBySSA2(ctx, &myapp)
+	err = r.reconcileDeploymentBySSA3(ctx, &myapp)
+	//err = r.reconcileServiceByOverwriting(ctx, &myapp)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	return ctrl.Result{Requeue: true}, nil
+	return ctrl.Result{Requeue: true, RequeueAfter: 1 * time.Second}, nil
 }
 
-func (r *MyAppReconciler) reconcileDeployment1(ctx context.Context, myapp *samplev1.MyApp) error {
+func (r *MyAppReconciler) reconcileDeploymentByOverwriting(ctx context.Context, myapp *samplev1.MyApp) error {
 	dep := &appsv1.Deployment{}
 	dep.Namespace = myapp.Namespace
 	dep.Name = myapp.Name + "-nginx"
@@ -132,20 +134,17 @@ func (r *MyAppReconciler) reconcileDeployment1(ctx context.Context, myapp *sampl
 		updated = dep.DeepCopy()
 		return ctrl.SetControllerReference(myapp, dep, r.Scheme)
 	})
-
 	if err != nil {
 		return fmt.Errorf("failed to reconcile deployment: %w", err)
 	}
 
-	if result == controllerutil.OperationResultUpdated {
+	if result != controllerutil.OperationResultNone {
 		fmt.Println(cmp.Diff(orig, updated))
-	} else {
-		fmt.Println("do nothing")
 	}
 	return nil
 }
 
-func (r *MyAppReconciler) reconcileService1(ctx context.Context, myapp *samplev1.MyApp) error {
+func (r *MyAppReconciler) reconcileServiceByOverwriting(ctx context.Context, myapp *samplev1.MyApp) error {
 	svc := &corev1.Service{}
 	svc.Namespace = myapp.Namespace
 	svc.Name = myapp.Name + "-service"
@@ -170,20 +169,17 @@ func (r *MyAppReconciler) reconcileService1(ctx context.Context, myapp *samplev1
 		updated = svc.DeepCopy()
 		return ctrl.SetControllerReference(myapp, svc, r.Scheme)
 	})
-
 	if err != nil {
 		return fmt.Errorf("failed to reconcile service: %w", err)
 	}
 
-	if result == controllerutil.OperationResultUpdated {
+	if result != controllerutil.OperationResultNone {
 		fmt.Println(cmp.Diff(orig, updated))
-	} else {
-		fmt.Println("do nothing")
 	}
 	return nil
 }
 
-func (r *MyAppReconciler) reconcileDeployment2(ctx context.Context, myapp *samplev1.MyApp) error {
+func (r *MyAppReconciler) reconcileDeploymentByManualMerge(ctx context.Context, myapp *samplev1.MyApp) error {
 	dep := &appsv1.Deployment{}
 	dep.Namespace = myapp.Namespace
 	dep.Name = myapp.Name + "-nginx"
@@ -216,20 +212,17 @@ func (r *MyAppReconciler) reconcileDeployment2(ctx context.Context, myapp *sampl
 		updated = dep.DeepCopy()
 		return ctrl.SetControllerReference(myapp, dep, r.Scheme)
 	})
-
 	if err != nil {
 		return fmt.Errorf("failed to reconcile deployment: %w", err)
 	}
 
-	if result == controllerutil.OperationResultUpdated {
+	if result != controllerutil.OperationResultNone {
 		fmt.Println(cmp.Diff(orig, updated))
-	} else {
-		fmt.Println("do nothing")
 	}
 	return nil
 }
 
-func (r *MyAppReconciler) reconcileDeployment3(ctx context.Context, myapp *samplev1.MyApp) error {
+func (r *MyAppReconciler) reconcileDeploymentByManualMerge2(ctx context.Context, myapp *samplev1.MyApp) error {
 	dep := &appsv1.Deployment{}
 	dep.Namespace = myapp.Namespace
 	dep.Name = myapp.Name + "-nginx"
@@ -299,24 +292,21 @@ func (r *MyAppReconciler) reconcileDeployment3(ctx context.Context, myapp *sampl
 		}
 		/* 中略 */
 
-		podTemplate.Spec.DeepCopyInto(&dep.Spec.Template.Spec)
+		podTemplate.DeepCopyInto(&dep.Spec.Template)
 		updated = dep.DeepCopy()
 		return ctrl.SetControllerReference(myapp, dep, r.Scheme)
 	})
-
 	if err != nil {
 		return fmt.Errorf("failed to reconcile deployment: %w", err)
 	}
 
-	if result == controllerutil.OperationResultUpdated {
+	if result != controllerutil.OperationResultNone {
 		fmt.Println(cmp.Diff(orig, updated))
-	} else {
-		fmt.Println("do nothing")
 	}
 	return nil
 }
 
-func (r *MyAppReconciler) reconcileDeployment4(ctx context.Context, myapp *samplev1.MyApp) error {
+func (r *MyAppReconciler) reconcileDeploymentByDeepDerivative(ctx context.Context, myapp *samplev1.MyApp) error {
 	dep := &appsv1.Deployment{}
 	dep.Namespace = myapp.Namespace
 	dep.Name = myapp.Name + "-nginx"
@@ -360,20 +350,17 @@ func (r *MyAppReconciler) reconcileDeployment4(ctx context.Context, myapp *sampl
 		updated = dep.DeepCopy()
 		return ctrl.SetControllerReference(myapp, dep, r.Scheme)
 	})
-
 	if err != nil {
 		return fmt.Errorf("failed to reconcile deployment: %w", err)
 	}
 
-	if result == controllerutil.OperationResultUpdated {
+	if result != controllerutil.OperationResultNone {
 		fmt.Println(cmp.Diff(orig, updated))
-	} else {
-		fmt.Println("do nothing")
 	}
 	return nil
 }
 
-func (r *MyAppReconciler) reconcileDeployment5(ctx context.Context, myapp *samplev1.MyApp) error {
+func (r *MyAppReconciler) reconcileDeploymentByStrategicMergePatch(ctx context.Context, myapp *samplev1.MyApp) error {
 	dep := &appsv1.Deployment{}
 	dep.Namespace = myapp.Namespace
 	dep.Name = myapp.Name + "-nginx"
@@ -455,13 +442,11 @@ func (r *MyAppReconciler) reconcileDeployment5(ctx context.Context, myapp *sampl
 	}
 	if string(patch) != "{}" {
 		fmt.Println(string(patch))
-	} else {
-		fmt.Println("do nothing")
 	}
 	return nil
 }
 
-func (r *MyAppReconciler) reconcileDeployment6(ctx context.Context, myapp *samplev1.MyApp) error {
+func (r *MyAppReconciler) reconcileDeploymentBySSA1(ctx context.Context, myapp *samplev1.MyApp) error {
 	decUnstructured := yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
 	depYaml := fmt.Sprintf(`
 apiVersion: apps/v1
@@ -496,16 +481,91 @@ spec:
 	//	return err
 	//}
 
+	var orig, updated appsv1.Deployment
+	err = r.Get(ctx, client.ObjectKey{Namespace: myapp.Namespace, Name: myapp.Name + "-nginx"}, &orig)
+	if err != nil && !errors.IsNotFound(err) {
+		return err
+	}
 	err = r.Patch(ctx, patch, client.Apply, &client.PatchOptions{
 		FieldManager: "myapp-operator",
 	})
 	if err != nil {
 		return err
 	}
+	err = r.Get(ctx, client.ObjectKey{Namespace: myapp.Namespace, Name: myapp.Name + "-nginx"}, &updated)
+	if err != nil {
+		return err
+	}
+	diff := cmp.Diff(orig, updated)
+	if len(diff) > 0 {
+		fmt.Printf("diff: \n%s\n", diff)
+	}
 	return nil
 }
 
-func (r *MyAppReconciler) reconcileDeployment7(ctx context.Context, myapp *samplev1.MyApp) error {
+func (r *MyAppReconciler) reconcileDeploymentBySSA2(ctx context.Context, myapp *samplev1.MyApp) error {
+	dep := &appsv1.Deployment{}
+	dep.Kind = "Deployment"
+	dep.APIVersion = appsv1.SchemeGroupVersion.String()
+	dep.Namespace = myapp.Namespace
+	dep.Name = myapp.Name + "-nginx"
+
+	if dep.Labels == nil {
+		dep.Labels = make(map[string]string)
+	}
+	dep.Labels["component"] = "nginx"
+	dep.Spec.Replicas = pointer.Int32Ptr(1)
+	dep.Spec.Selector = &metav1.LabelSelector{
+		MatchLabels: map[string]string{
+			"component": "nginx",
+		},
+	}
+	podTemplate := myapp.Spec.PodTemplate.Template.DeepCopy()
+	if podTemplate.Labels == nil {
+		podTemplate.Labels = make(map[string]string)
+	}
+	podTemplate.Labels["component"] = "nginx"
+	hasNginxContainer := false
+	for _, c := range podTemplate.Spec.Containers {
+		if c.Name == "nginx" {
+			hasNginxContainer = true
+		}
+	}
+	if !hasNginxContainer {
+		podTemplate.Spec.Containers = append(podTemplate.Spec.Containers, corev1.Container{
+			Name:  "nginx",
+			Image: "nginx:latest",
+		})
+	}
+	podTemplate.DeepCopyInto(&dep.Spec.Template)
+	err := ctrl.SetControllerReference(myapp, dep, r.Scheme)
+	if err != nil {
+		return err
+	}
+
+	var orig, updated appsv1.Deployment
+	err = r.Get(ctx, client.ObjectKey{Namespace: myapp.Namespace, Name: myapp.Name + "-nginx"}, &orig)
+	if err != nil && !errors.IsNotFound(err) {
+		return err
+	}
+	err = r.Patch(ctx, dep, client.Apply, &client.PatchOptions{
+		FieldManager: "myapp-operator",
+	})
+	if err != nil {
+		return err
+	}
+	err = r.Get(ctx, client.ObjectKey{Namespace: myapp.Namespace, Name: myapp.Name + "-nginx"}, &updated)
+	if err != nil {
+		return err
+	}
+	diff := cmp.Diff(orig, updated)
+	if len(diff) > 0 {
+		fmt.Printf("diff: \n%s\n", diff)
+	}
+	return nil
+}
+
+func (r *MyAppReconciler) reconcileDeploymentBySSA3(ctx context.Context, myapp *samplev1.MyApp) error {
 	dep := &appsv1.Deployment{}
 	dep.Namespace = myapp.Namespace
 	dep.Name = myapp.Name + "-nginx"
@@ -547,6 +607,15 @@ func (r *MyAppReconciler) reconcileDeployment7(ctx context.Context, myapp *sampl
 	if err != nil {
 		return err
 	}
+	delete(obj["metadata"].(map[string]interface{}), "creationTimestamp")
+	delete(obj["spec"].(map[string]interface{}), "strategy")
+	delete(obj["spec"].(map[string]interface{})["template"].(map[string]interface{}), "creationTimestamp")
+	for i, co := range podTemplate.Spec.Containers {
+		if len(co.Resources.Limits) == 0 && len(co.Resources.Requests) == 0 {
+			delete(obj["spec"].(map[string]interface{})["template"].(map[string]interface{})["spec"].(map[string]interface{})["containers"].([]interface{})[i].(map[string]interface{}), "resources")
+		}
+	}
+
 	patch := &unstructured.Unstructured{
 		Object: obj,
 	}
@@ -555,12 +624,24 @@ func (r *MyAppReconciler) reconcileDeployment7(ctx context.Context, myapp *sampl
 		Version: "v1",
 		Kind:    "Deployment",
 	})
-	fmt.Println(patch)
+	var orig, updated appsv1.Deployment
+	err = r.Get(ctx, client.ObjectKey{Namespace: myapp.Namespace, Name: myapp.Name + "-nginx"}, &orig)
+	if err != nil && !errors.IsNotFound(err) {
+		return err
+	}
 	err = r.Patch(ctx, patch, client.Apply, &client.PatchOptions{
 		FieldManager: "myapp-operator",
 	})
 	if err != nil {
 		return err
+	}
+	err = r.Get(ctx, client.ObjectKey{Namespace: myapp.Namespace, Name: myapp.Name + "-nginx"}, &updated)
+	if err != nil {
+		return err
+	}
+	diff := cmp.Diff(orig, updated)
+	if len(diff) > 0 {
+		fmt.Printf("diff: \n%s\n", diff)
 	}
 	return nil
 }

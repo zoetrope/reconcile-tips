@@ -16,5 +16,5 @@ spec:
                 port: 8080
               initialDelaySeconds: 3
               periodSeconds: 4
-              failureThreshold: 5
+              failureThreshold: 6
   serviceTemplate: {}
