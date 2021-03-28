@@ -2,20 +2,19 @@ apiVersion: sample.zoetrope.github.io/v1
 kind: MyApp
 metadata:
   name: myapp-sample
-  labels:
-    foo: bar
 spec:
   podTemplate:
-    metadata:
-      labels:
-        "foo": "bar"
     template:
-      metadata:
-        labels:
-          "foo": "bar"
       spec:
         containers:
           - name: nginx
             image: nginx:latest
             imagePullPolicy: IfNotPresent
+            livenessProbe:
+              httpGet:
+                path: /
+                port: 8080
+              initialDelaySeconds: 3
+              periodSeconds: 4
+              failureThreshold: 5
   serviceTemplate: {}

@@ -31,6 +31,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -83,7 +84,8 @@ func (r *MyAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	//err = r.reconcileDeployment3(ctx, &myapp)
 	//err = r.reconcileDeployment4(ctx, &myapp)
 	//err = r.reconcileDeployment5(ctx, &myapp)
-	err = r.reconcileDeployment6(ctx, &myapp)
+	//err = r.reconcileDeployment6(ctx, &myapp)
+	err = r.reconcileDeployment7(ctx, &myapp)
 	//err = r.reconcileService1(ctx, &myapp)
 	if err != nil {
 		return ctrl.Result{}, err
@@ -200,25 +202,17 @@ func (r *MyAppReconciler) reconcileDeployment2(ctx context.Context, myapp *sampl
 				"component": "nginx",
 			},
 		}
-
 		dep.Spec.Template.Labels = map[string]string{
 			"component": "nginx",
 		}
-
-		var container *corev1.Container
-		for i, c := range dep.Spec.Template.Spec.Containers {
-			if c.Name == "nginx" {
-				container = &dep.Spec.Template.Spec.Containers[i]
-				break
+		if len(dep.Spec.Template.Spec.Containers) == 0 {
+			dep.Spec.Template.Spec.Containers = []corev1.Container{
+				{
+					Name:  "nginx",
+					Image: "nginx:latest",
+				},
 			}
 		}
-		if container == nil {
-			container = &corev1.Container{
-				Name: "nginx",
-			}
-		}
-		container.Image = "nginx:latest"
-
 		updated = dep.DeepCopy()
 		return ctrl.SetControllerReference(myapp, dep, r.Scheme)
 	})
@@ -256,9 +250,10 @@ func (r *MyAppReconciler) reconcileDeployment3(ctx context.Context, myapp *sampl
 		}
 
 		podTemplate := myapp.Spec.PodTemplate.Template.DeepCopy()
-		podTemplate.Labels = map[string]string{
-			"component": "nginx",
+		if podTemplate.Labels == nil {
+			podTemplate.Labels = make(map[string]string)
 		}
+		podTemplate.Labels["component"] = "nginx"
 		hasNginxContainer := false
 		for _, c := range podTemplate.Spec.Containers {
 			if c.Name == "nginx" {
@@ -283,6 +278,7 @@ func (r *MyAppReconciler) reconcileDeployment3(ctx context.Context, myapp *sampl
 					if len(c.TerminationMessagePolicy) == 0 && len(cur.TerminationMessagePolicy) > 0 {
 						podTemplate.Spec.Containers[i].TerminationMessagePolicy = cur.TerminationMessagePolicy
 					}
+					/* 中略 */
 				}
 			}
 		}
@@ -301,6 +297,7 @@ func (r *MyAppReconciler) reconcileDeployment3(ctx context.Context, myapp *sampl
 		if podTemplate.Spec.SecurityContext == nil && dep.Spec.Template.Spec.SecurityContext != nil {
 			podTemplate.Spec.SecurityContext = dep.Spec.Template.Spec.SecurityContext.DeepCopy()
 		}
+		/* 中略 */
 
 		podTemplate.Spec.DeepCopyInto(&dep.Spec.Template.Spec)
 		updated = dep.DeepCopy()
@@ -340,9 +337,10 @@ func (r *MyAppReconciler) reconcileDeployment4(ctx context.Context, myapp *sampl
 		}
 
 		podTemplate := myapp.Spec.PodTemplate.Template.DeepCopy()
-		podTemplate.Labels = map[string]string{
-			"component": "nginx",
+		if podTemplate.Labels == nil {
+			podTemplate.Labels = make(map[string]string)
 		}
+		podTemplate.Labels["component"] = "nginx"
 		hasNginxContainer := false
 		for _, c := range podTemplate.Spec.Containers {
 			if c.Name == "nginx" {
@@ -391,9 +389,10 @@ func (r *MyAppReconciler) reconcileDeployment5(ctx context.Context, myapp *sampl
 		},
 	}
 	podTemplate := myapp.Spec.PodTemplate.Template.DeepCopy()
-	podTemplate.Labels = map[string]string{
-		"component": "nginx",
+	if podTemplate.Labels == nil {
+		podTemplate.Labels = make(map[string]string)
 	}
+	podTemplate.Labels["component"] = "nginx"
 	hasNginxContainer := false
 	for _, c := range podTemplate.Spec.Containers {
 		if c.Name == "nginx" {
@@ -407,6 +406,10 @@ func (r *MyAppReconciler) reconcileDeployment5(ctx context.Context, myapp *sampl
 		})
 	}
 	podTemplate.DeepCopyInto(&dep.Spec.Template)
+	err := ctrl.SetControllerReference(myapp, dep, r.Scheme)
+	if err != nil {
+		return err
+	}
 
 	depEncoded, err := runtime.Encode(unstructured.UnstructuredJSONScheme, dep)
 	if err != nil {
@@ -465,7 +468,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   namespace: %s
-  name: %s
+  name: %s-nginx
   labels:
     component: nginx
 spec:
@@ -488,6 +491,71 @@ spec:
 	if err != nil {
 		return err
 	}
+	//err = ctrl.SetControllerReference(myapp, patch, r.Scheme)
+	//if err != nil {
+	//	return err
+	//}
+
+	err = r.Patch(ctx, patch, client.Apply, &client.PatchOptions{
+		FieldManager: "myapp-operator",
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *MyAppReconciler) reconcileDeployment7(ctx context.Context, myapp *samplev1.MyApp) error {
+	dep := &appsv1.Deployment{}
+	dep.Namespace = myapp.Namespace
+	dep.Name = myapp.Name + "-nginx"
+
+	if dep.Labels == nil {
+		dep.Labels = make(map[string]string)
+	}
+	dep.Labels["component"] = "nginx"
+	dep.Spec.Replicas = pointer.Int32Ptr(1)
+	dep.Spec.Selector = &metav1.LabelSelector{
+		MatchLabels: map[string]string{
+			"component": "nginx",
+		},
+	}
+	podTemplate := myapp.Spec.PodTemplate.Template.DeepCopy()
+	if podTemplate.Labels == nil {
+		podTemplate.Labels = make(map[string]string)
+	}
+	podTemplate.Labels["component"] = "nginx"
+	hasNginxContainer := false
+	for _, c := range podTemplate.Spec.Containers {
+		if c.Name == "nginx" {
+			hasNginxContainer = true
+		}
+	}
+	if !hasNginxContainer {
+		podTemplate.Spec.Containers = append(podTemplate.Spec.Containers, corev1.Container{
+			Name:  "nginx",
+			Image: "nginx:latest",
+		})
+	}
+	podTemplate.DeepCopyInto(&dep.Spec.Template)
+	err := ctrl.SetControllerReference(myapp, dep, r.Scheme)
+	if err != nil {
+		return err
+	}
+
+	obj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(dep)
+	if err != nil {
+		return err
+	}
+	patch := &unstructured.Unstructured{
+		Object: obj,
+	}
+	patch.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "apps",
+		Version: "v1",
+		Kind:    "Deployment",
+	})
+	fmt.Println(patch)
 	err = r.Patch(ctx, patch, client.Apply, &client.PatchOptions{
 		FieldManager: "myapp-operator",
 	})
