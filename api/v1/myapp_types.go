@@ -17,8 +17,8 @@ limitations under the License.
 package v1
 
 import (
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	corev1apply "k8s.io/client-go/applyconfigurations/core/v1"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -29,8 +29,7 @@ type MyAppSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	PodTemplate     corev1.PodTemplate `json:"podTemplate"`
-	ServiceTemplate corev1.Service     `json:"serviceTemplate"`
+	PodTemplate *corev1apply.PodTemplateApplyConfiguration `json:"podTemplate"`
 }
 
 // MyAppStatus defines the observed state of MyApp
