@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"k8s.io/apimachinery/pkg/api/equality"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -74,7 +75,8 @@ func (r *MyAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return ctrl.Result{}, nil
 	}
 
-	err = r.reconcileDeploymentBySSA(ctx, &myapp)
+	//err = r.reconcileDeploymentBySSA(ctx, &myapp)
+	err = r.reconcileDeploymentBySSAWithClientComparison(ctx, &myapp)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -132,6 +134,91 @@ func (r *MyAppReconciler) reconcileDeploymentBySSA(ctx context.Context, myapp *s
 	}
 	err = r.Patch(ctx, patch, client.Apply, &client.PatchOptions{
 		FieldManager: "myapp-operator",
+	})
+	if err != nil {
+		return err
+	}
+	err = r.Get(ctx, client.ObjectKey{Namespace: myapp.Namespace, Name: myapp.Name + "-nginx"}, &updated)
+	if err != nil {
+		return err
+	}
+	diff := cmp.Diff(orig, updated)
+	if len(diff) > 0 {
+		fmt.Printf("diff: \n%s\n", diff)
+	}
+	return nil
+}
+
+func (r *MyAppReconciler) reconcileDeploymentBySSAWithClientComparison(ctx context.Context, myapp *samplev1.MyApp) error {
+	fieldManager := "myapp-operator"
+
+	dep := appsv1apply.Deployment(myapp.Name+"-nginx", myapp.Namespace).
+		WithLabels(map[string]string{"component": "nginx"}).
+		WithSpec(appsv1apply.DeploymentSpec().
+			WithReplicas(1).
+			WithSelector(metav1apply.LabelSelector().WithMatchLabels(map[string]string{"component": "nginx"})))
+
+	var podTemplate *corev1apply.PodTemplateSpecApplyConfiguration
+	if myapp.Spec.PodTemplate != nil {
+		podTemplate = myapp.Spec.PodTemplate.Template
+	} else {
+		podTemplate = corev1apply.PodTemplateSpec()
+	}
+	podTemplate.WithLabels(map[string]string{"component": "nginx"})
+
+	if podTemplate.Spec == nil {
+		podTemplate.WithSpec(corev1apply.PodSpec())
+	}
+	hasNginxContainer := false
+	for _, c := range podTemplate.Spec.Containers {
+		if *c.Name == "nginx" {
+			hasNginxContainer = true
+		}
+	}
+	if !hasNginxContainer {
+		podTemplate.Spec.WithContainers(
+			corev1apply.Container().WithName("nginx").WithImage("nginx:latest"))
+	}
+	dep.Spec.WithTemplate(podTemplate)
+
+	err := setControllerReference(myapp, dep, r.Scheme)
+	if err != nil {
+		return err
+	}
+
+	obj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(dep)
+	if err != nil {
+		return err
+	}
+	patch := &unstructured.Unstructured{
+		Object: obj,
+	}
+
+	var orig, updated appsv1.Deployment
+	err = r.Get(ctx, client.ObjectKey{Namespace: myapp.Namespace, Name: myapp.Name + "-nginx"}, &orig)
+	if err != nil && !errors.IsNotFound(err) {
+		return err
+	}
+
+	if errors.IsNotFound(err) {
+		fmt.Printf("create: \n%#v\n", dep)
+		return r.Patch(ctx, patch, client.Apply, &client.PatchOptions{
+			FieldManager: fieldManager,
+		})
+	}
+
+	origApplyConfig, err := appsv1apply.ExtractDeployment(&orig, fieldManager)
+	if err != nil {
+		return err
+	}
+
+	if equality.Semantic.DeepEqual(dep, origApplyConfig) {
+		fmt.Println("do nothing")
+		return nil
+	}
+
+	err = r.Patch(ctx, patch, client.Apply, &client.PatchOptions{
+		FieldManager: fieldManager,
 	})
 	if err != nil {
 		return err
