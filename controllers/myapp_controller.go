@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"k8s.io/apimachinery/pkg/api/equality"
+	"k8s.io/utils/pointer"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -134,6 +135,7 @@ func (r *MyAppReconciler) reconcileDeploymentBySSA(ctx context.Context, myapp *s
 	}
 	err = r.Patch(ctx, patch, client.Apply, &client.PatchOptions{
 		FieldManager: "myapp-operator",
+		Force: pointer.Bool(true),
 	})
 	if err != nil {
 		return err
@@ -200,13 +202,6 @@ func (r *MyAppReconciler) reconcileDeploymentBySSAWithClientComparison(ctx conte
 		return err
 	}
 
-	if errors.IsNotFound(err) {
-		fmt.Printf("create: \n%#v\n", dep)
-		return r.Patch(ctx, patch, client.Apply, &client.PatchOptions{
-			FieldManager: fieldManager,
-		})
-	}
-
 	origApplyConfig, err := appsv1apply.ExtractDeployment(&orig, fieldManager)
 	if err != nil {
 		return err
@@ -219,6 +214,7 @@ func (r *MyAppReconciler) reconcileDeploymentBySSAWithClientComparison(ctx conte
 
 	err = r.Patch(ctx, patch, client.Apply, &client.PatchOptions{
 		FieldManager: fieldManager,
+		Force: pointer.Bool(true),
 	})
 	if err != nil {
 		return err
