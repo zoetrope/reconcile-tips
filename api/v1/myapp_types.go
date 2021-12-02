@@ -17,9 +17,36 @@ limitations under the License.
 package v1
 
 import (
+	"encoding/json"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	corev1apply "k8s.io/client-go/applyconfigurations/core/v1"
 )
+
+type PodTemplateApplyConfiguration corev1apply.PodTemplateApplyConfiguration
+
+func (ac *PodTemplateApplyConfiguration) DeepCopy() *PodTemplateApplyConfiguration {
+	out := new(PodTemplateApplyConfiguration)
+	deepCopy(out, ac)
+	return out
+}
+
+func deepCopy(dst interface{}, src interface{}) {
+	if dst == nil {
+		panic("dst cannot be nil")
+	}
+	if src == nil {
+		panic("src cannot be nil")
+	}
+	bytes, err := json.Marshal(src)
+	if err != nil {
+		panic("Unable to marshal src")
+	}
+	err = json.Unmarshal(bytes, dst)
+	if err != nil {
+		panic("Unable to unmarshal into dst")
+	}
+}
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
@@ -29,7 +56,7 @@ type MyAppSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	PodTemplate *corev1apply.PodTemplateApplyConfiguration `json:"podTemplate"`
+	PodTemplate *PodTemplateApplyConfiguration `json:"podTemplate"`
 }
 
 // MyAppStatus defines the observed state of MyApp

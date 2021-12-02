@@ -19,8 +19,6 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"k8s.io/apimachinery/pkg/api/equality"
-	"k8s.io/utils/pointer"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -28,12 +26,14 @@ import (
 	samplev1 "github.com/zoetrope/reconcile-tips/api/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	appsv1apply "k8s.io/client-go/applyconfigurations/apps/v1"
 	corev1apply "k8s.io/client-go/applyconfigurations/core/v1"
 	metav1apply "k8s.io/client-go/applyconfigurations/meta/v1"
+	"k8s.io/utils/pointer"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
@@ -135,7 +135,7 @@ func (r *MyAppReconciler) reconcileDeploymentBySSA(ctx context.Context, myapp *s
 	}
 	err = r.Patch(ctx, patch, client.Apply, &client.PatchOptions{
 		FieldManager: "myapp-operator",
-		Force: pointer.Bool(true),
+		Force:        pointer.Bool(true),
 	})
 	if err != nil {
 		return err
@@ -214,7 +214,7 @@ func (r *MyAppReconciler) reconcileDeploymentBySSAWithClientComparison(ctx conte
 
 	err = r.Patch(ctx, patch, client.Apply, &client.PatchOptions{
 		FieldManager: fieldManager,
-		Force: pointer.Bool(true),
+		Force:        pointer.Bool(true),
 	})
 	if err != nil {
 		return err

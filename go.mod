@@ -3,7 +3,6 @@ module github.com/zoetrope/reconcile-tips
 go 1.16
 
 require (
-	github.com/getlantern/deepcopy v0.0.0-20160317154340-7f45deb8130a
 	github.com/go-logr/logr v0.4.0
 	github.com/google/go-cmp v0.5.5
 	github.com/onsi/ginkgo v1.16.4
@@ -11,5 +10,6 @@ require (
 	k8s.io/api v0.21.2
 	k8s.io/apimachinery v0.21.2
 	k8s.io/client-go v0.21.2
+	k8s.io/utils v0.0.0-20210527160623-6fdb442a123b
 	sigs.k8s.io/controller-runtime v0.9.2
 )
